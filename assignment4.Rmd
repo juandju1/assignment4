@@ -1,4 +1,5 @@
 ---
+Juan Djuwadi Principal Component Analysis
 title: "Principle Component Aanalysis"
 output: html_document
 ---
@@ -16,7 +17,10 @@ The data you will be using comes from the Assistments online intelligent tutorin
 
 ## Start by uploading the data
 ```{r}
-D1 <- 
+D1 <- read.csv("Assistments-confidence.csv")
+
+#Removing id
+D1 <- D1[,-1]
 
   #We won't need the id variable, so remove that.
 
@@ -28,6 +32,7 @@ D1 <-
 ```{r}
 #You can install the corrplot package to plot some pretty correlation matrices (sometimes called correlograms)
 
+install.packages("corrplot")
 library(corrplot)
 
 #Generate pairwise correlations
@@ -44,7 +49,8 @@ tl.col="black", tl.cex=0.6, tl.srt=45,
 ## Create a new data frame with the mean_correct variables removed
 
 ```{r}
-D2 <- 
+#Removing mean_correct
+D2 <- D1[,-4]
 
 #The, scale and center your data for easier interpretation
 D2 <- scale(D2, center = TRUE)
@@ -79,6 +85,7 @@ plot(pca, type = "lines")
 ## Part II
 
 ```{r}
+
 #Now, create a data frame of the transformed data from your pca.
 
 D3 <- as.data.frame(pca$x)
@@ -89,8 +96,14 @@ D4 <- cbind(D3, as.data.frame(D1$mean_correct))
 
 #Now re-run your scatterplots and correlations between the transformed data and mean_correct. If you had dropped some components would you have lost important infomation about mean_correct?
 
-COR2 <- 
+## We may drop PC6 given the information from the plot line since PC6 shows little variation. However, an assessment of the corplot with the principal components shows that PC6 is heavily correlated with mean correct - our out come of interest. Dropping it would mean losing important information about mean correct. Dropping PC5 may be feasible since it has nearly no correlation with mean_correct as indicated by the corrplot and has relatively lower variance in comparison with the other components. 
 
+
+COR2 <- cor(D4)
+corrplot(COR2, order="AOE", method="circle", tl.pos="lt", type="upper",        
+tl.col="black", tl.cex=0.6, tl.srt=45, 
+        addCoef.col="black", addCoefasPercent = TRUE,
+        sig.level=0.50, insig = "blank")
 ```
 ## Now print out the eigenvectors (often called loadings) for the components you generated:
 
@@ -103,7 +116,16 @@ loadings <- abs(pca$rotation) #abs() will make all eigenvectors positive
 
 sweep(loadings, 2, colSums(loadings), "/") #sweep() computes each row as a proportion of the column. (There must be a way to do this with dplyr()?)
 
+#Calculating Each Row as a Proporton of the Column with Dplyr and Tidyr
+library(dplyr)
+library(tidyr)
+loadings2 <- tbl_df(loadings)
+Variables <- c("prior_prob_count", "prior_percent_correct", "problems_attempted", "mean_hint", "mean_attempt", "mean_confidence ") 
+loadings3 <- cbind(Variables, loadings2)
+loadings4 <- loadings3 %>% mutate(PC1 = PC1/sum(PC1)) %>% mutate(PC2 = PC2/sum(PC2)) %>% mutate(PC3 = PC3/sum(PC3)) %>% mutate(PC4 = PC4/sum(PC4)) %>% mutate(PC5 = PC5/sum(PC5)) %>%  mutate(PC6 = PC6/sum(PC6)) %>% 
+
 #Now examine your components and try to come up with substantive descriptions of what some might represent?
+
 
 #You can generate a biplot to help you, though these can be a bit confusing. They plot the transformed data by the first two components. Therefore, the axes represent the direction of maximum variance. Then mapped onto this point cloud are the original directions of the variables, depicted as red arrows. It is supposed to provide a visualization of which variables "go together". Variables that possibly represent the same underlying construct point in the same direction.  
 
@@ -111,6 +133,71 @@ biplot(pca)
 
 #Calculate values for each student that represent these your composite variables and then create a new correlogram showing their relationship to mean_correct.
 
+D21 <- as.matrix(D2) %*% pca$rotation
+D22 <- cbind(D21, as.data.frame(D1$mean_correct))
+CORCOMP <- cor(D22)
+corrplot(CORCOMP, order="AOE", method="circle", tl.pos="lt", type="upper",        
+tl.col="black", tl.cex=0.6, tl.srt=45, 
+        addCoef.col="black", addCoefasPercent = TRUE,
+        sig.level=0.50, insig = "blank")
+
 ```
 # Part III  
 ## Also in this repository is a data set and codebook from Rod Martin, Patricia Puhlik-Doris, Gwen Larsen, Jeanette Gray, Kelly Weir at the University of Western Ontario about people's sense of humor. Can you perform a PCA on this data?
+```{r}
+
+#Reading the Humor Data into a Data Frame
+DF <- read.csv("humor_data.csv")
+
+#Parsing Data into Just 32 Questions, then generating a Correlation Plot to observe the relationship
+DF2 <- DF[1:32]
+CORDF2 <- cor(DF2)
+corrplot(CORDF2, order="AOE", method="circle", tl.pos="lt", type="upper",        
+tl.col="black", tl.cex=0.6, tl.srt=45, 
+        addCoef.col="black", addCoefasPercent = TRUE,
+        sig.level=0.50, insig = "blank")
+
+#Scaling the Data 
+DF3 <- scale(DF2, center = TRUE)
+
+#Creating PCA Componenets
+pca1 <- prcomp(DF3, scale = TRUE)
+
+#Creating Sweeps and Biplot of the PCA
+loadings0 <- abs(pca1$rotation)
+x <- sweep(loadings0, 2, colSums(loadings0),"/")
+biplot(pca1)
+
+#We see from the biplot that the directions are generally clustered into four directions, this generally agrees with the given survey's own assessment of the questions. 
+
+
+#Plotting PCA Line
+plot(pca1, type = "lines")
+#We see from the obervation of the plot that variables 6 through 10 can be dropped.
+
+#We drop the all the PCA components past 6
+DF4 <- as.data.frame(pca1$x)
+DF5 <- DF4[1:6]
+
+
+#We scale the data set and create a Corrplot
+DF7 <- scale(DF5, center = TRUE)
+CORDF7 <- cor(DF7)
+
+corrplot(CORDF7, order="AOE", method="circle", tl.pos="lt", type="upper",        
+tl.col="black", tl.cex=0.6, tl.srt=45, 
+        addCoef.col="black", addCoefasPercent = TRUE,
+        sig.level=0.50, insig = "blank")
+
+#We perform PCA on the data frame after the non-explaining components are dropped.
+pca2 <- prcomp(DF7, scale = TRUE)
+summary(pca2)
+plot(pca2, type = "lines")
+
+#We create the Eigenvectors and create a Biplot.
+loadings2 <- abs(pca2$rotation)
+x <- sweep(loadings2, 2, colSums(loadings2),"/")
+biplot(pca2)
+
+```
+
