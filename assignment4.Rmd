@@ -96,7 +96,7 @@ D4 <- cbind(D3, as.data.frame(D1$mean_correct))
 
 #Now re-run your scatterplots and correlations between the transformed data and mean_correct. If you had dropped some components would you have lost important infomation about mean_correct?
 
-## We may drop PC6 given the information from the plot line since PC6 shows little variation. However, an assessment of the corplot with the principal components shows that PC6 is heavily correlated with mean correct - our out come of interest. Dropping it would mean losing important information about mean correct. Dropping PC5 may be feasible since it has nearly no correlation with mean_correct as indicated by the corrplot and has relatively lower variance in comparison with the other components. 
+## We may drop PC6 given the information from the plot line since PC6 shows little variation. However, an assessment of the corplot with the principal components shows that PC6 is heavily correlated with mean correct - our outcome of interest. Dropping it would mean losing important information about mean correct. Dropping PC5 may be feasible since it has nearly no correlation with mean_correct as indicated by the corrplot and has relatively lower variance in comparison with the other components. 
 
 
 COR2 <- cor(D4)
@@ -117,14 +117,40 @@ loadings <- abs(pca$rotation) #abs() will make all eigenvectors positive
 sweep(loadings, 2, colSums(loadings), "/") #sweep() computes each row as a proportion of the column. (There must be a way to do this with dplyr()?)
 
 #Calculating Each Row as a Proporton of the Column with Dplyr and Tidyr
-library(dplyr)
-library(tidyr)
-loadings2 <- tbl_df(loadings)
-Variables <- c("prior_prob_count", "prior_percent_correct", "problems_attempted", "mean_hint", "mean_attempt", "mean_confidence ") 
-loadings3 <- cbind(Variables, loadings2)
-loadings4 <- loadings3 %>% mutate(PC1 = PC1/sum(PC1)) %>% mutate(PC2 = PC2/sum(PC2)) %>% mutate(PC3 = PC3/sum(PC3)) %>% mutate(PC4 = PC4/sum(PC4)) %>% mutate(PC5 = PC5/sum(PC5)) %>%  mutate(PC6 = PC6/sum(PC6)) %>% 
+
 
 #Now examine your components and try to come up with substantive descriptions of what some might represent?
+
+#PC1 (mean_hint, mean_attempt, and problems_attempted) could represent the extent a student seeks hints for the questions they attempted. 
+fviz_contrib(pca, 
+             choice = "var", 
+             axes = 1, 
+             top = 3,
+             title = "PC1 Top 3 Variable Contributions")
+ # PC2 (prior_percent_correct, prior_prob_count) seems to represent a student's past performance in relation to how many problems the answered. 
+fviz_contrib(pca, 
+             choice = "var", 
+             axes = 2, 
+             top = 3,
+             title = "PC2 Top 3 Variable Contributions")
+ #PC3 (mean_confidence) mostly represents a student's confidence level. 
+fviz_contrib(pca, 
+             choice = "var", 
+             axes = 3, 
+             top = 3,
+             title = "PC3 Top 3 Variable Contributions")
+ #PC4 (prior_prob_count, mean_confidence)  may represent confidence considering the number of problems a student answered already. 
+fviz_contrib(pca, 
+             choice = "var", 
+             axes = 4, 
+             top = 3,
+             title = "PC4 Top 3 Variable Contributions")
+ #PC5 (mean_attempt, problems_attempted) may reflect student persistence in the questions that they're attemptin to answer. 
+fviz_contrib(pca, 
+             choice = "var", 
+             axes = 5, 
+             top = 3,
+             title = "PC5 Top 3 Variable Contributions")
 
 
 #You can generate a biplot to help you, though these can be a bit confusing. They plot the transformed data by the first two components. Therefore, the axes represent the direction of maximum variance. Then mapped onto this point cloud are the original directions of the variables, depicted as red arrows. It is supposed to provide a visualization of which variables "go together". Variables that possibly represent the same underlying construct point in the same direction.  
@@ -169,7 +195,6 @@ x <- sweep(loadings0, 2, colSums(loadings0),"/")
 biplot(pca1)
 
 #We see from the biplot that the directions are generally clustered into four directions, this generally agrees with the given survey's own assessment of the questions. 
-
 
 #Plotting PCA Line
 plot(pca1, type = "lines")
